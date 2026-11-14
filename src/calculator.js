@@ -61,10 +61,19 @@ function inputDigit(state, d) {
   }
   if (countDigits(entry) >= DIGITS) return state;
   if (entry === '0') return { ...state, entry: d };
+  if (entry === '-0') return { ...state, entry: '-' + d };
   return { ...state, entry: entry + d };
 }
 
+// "-" pressed before any number starts a negative first operand.
+const isPristine = (s) => s.fresh && !s.op && s.acc === null && s.entry === '0';
+
 function inputOperator(state, o) {
+  if (o === '-' && isPristine(state)) return { ...state, entry: '-0', fresh: false };
+  if (state.entry === '-0' && !state.fresh) {
+    // Only the sign has been typed: "-" again cancels it, other operators are ignored.
+    return o === '-' ? { ...state, entry: '0', fresh: true } : state;
+  }
   if (state.op && !state.fresh) {
     const result = compute(state.acc, state.op, state.entry);
     if (result === null) return errorState;
@@ -111,7 +120,10 @@ export function reducer(state, key) {
 }
 
 // Turn an entry string into 21 tube cells (right aligned).
-// Each cell: { digit: '0'-'9' | null, dot: boolean }
+// Each cell: { digit: '0'-'9' | '−' | null, dot: boolean }
+// A negative number gets its minus sign in the tube just left of its
+// highest digit; when all 21 tubes are digits, the minus does not fit
+// (the caller shows it in the separate sign tube instead).
 export function toCells(entry) {
   const cells = [];
   for (const ch of entry.replace('-', '')) {
@@ -121,6 +133,7 @@ export function toCells(entry) {
       cells.push({ digit: ch, dot: false });
     }
   }
+  if (entry.startsWith('-') && cells.length < DIGITS) cells.unshift({ digit: '−', dot: false });
   while (cells.length < DIGITS) cells.unshift({ digit: null, dot: false });
   return cells.slice(-DIGITS);
 }

@@ -57,7 +57,9 @@ function Display({ power, state }) {
   if (power === 'on') {
     cells = toCells(state.error ? '0' : state.entry);
     if (state.error) sign = 'E';
-    else if (state.entry.startsWith('-')) sign = '−';
+    // Minus normally sits in the tube left of the number (see toCells);
+    // only a full 21-digit negative number needs the separate sign tube.
+    else if (state.entry.startsWith('-') && !cells.some((c) => c.digit === '−')) sign = '−';
   }
   const readout = power === 'off' ? 'off' : state.error ? 'Error' : state.entry;
 

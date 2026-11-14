@@ -56,10 +56,26 @@ test('errors: divide by zero and overflow', () => {
 test('toCells right-aligns and places decimal dots', () => {
   const cells = toCells('-12.5');
   assert.equal(cells.length, 21);
-  assert.deepEqual(cells.slice(-3), [
+  assert.deepEqual(cells.slice(-4), [
+    { digit: '−', dot: false },
     { digit: '1', dot: false },
     { digit: '2', dot: true },
     { digit: '5', dot: false },
   ]);
   assert.equal(cells[0].digit, null);
+});
+
+test('minus pressed first makes the first number negative', () => {
+  assert.equal(run('-').entry, '-0');
+  assert.equal(show('-5'), '-5');
+  assert.equal(show('-5+3='), '-2');
+  assert.equal(show('-2.5*4='), '-10');
+  assert.equal(show('--7'), '7'); // second "-" cancels the sign
+  assert.equal(show('5-3='), '2'); // normal subtraction unchanged
+});
+
+test('toCells puts minus beside the number, or omits it when full', () => {
+  assert.deepEqual(toCells('-0').slice(-2).map((c) => c.digit), ['−', '0']);
+  const full = toCells('-' + '9'.repeat(21));
+  assert.ok(full.every((c) => c.digit === '9'));
 });
